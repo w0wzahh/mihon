@@ -93,10 +93,6 @@ fun UpdateScreen(
     ) { contentPadding ->
         when {
             state.isLoading -> LoadingScreen(Modifier.padding(contentPadding))
-            state.items.isEmpty() -> EmptyScreen(
-                stringRes = MR.strings.information_no_recent,
-                modifier = Modifier.padding(contentPadding),
-            )
             else -> {
                 val scope = rememberCoroutineScope()
                 var isRefreshing by remember { mutableStateOf(false) }
@@ -121,14 +117,23 @@ fun UpdateScreen(
                     ) {
                         updatesLastUpdatedItem(lastUpdated)
 
-                        updatesUiItems(
-                            uiModels = state.getUiModel(),
-                            selectionMode = state.selectionMode,
-                            onUpdateSelected = onUpdateSelected,
-                            onClickCover = onClickCover,
-                            onClickUpdate = onOpenChapter,
-                            onDownloadChapter = onDownloadChapter,
-                        )
+                        if (state.items.isEmpty()) {
+                            item(key = "updates-empty") {
+                                EmptyScreen(
+                                    stringRes = MR.strings.information_no_recent,
+                                    modifier = Modifier.fillParentMaxSize(),
+                                )
+                            }
+                        } else {
+                            updatesUiItems(
+                                uiModels = state.getUiModel(),
+                                selectionMode = state.selectionMode,
+                                onUpdateSelected = onUpdateSelected,
+                                onClickCover = onClickCover,
+                                onClickUpdate = onOpenChapter,
+                                onDownloadChapter = onDownloadChapter,
+                            )
+                        }
                     }
                 }
             }

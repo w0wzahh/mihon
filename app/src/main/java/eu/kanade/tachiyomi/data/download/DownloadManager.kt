@@ -238,6 +238,14 @@ class DownloadManager(
     }
 
     /**
+     * Removes queued downloads for chapters that were deleted, e.g. when a
+     * source sync pruned them from the chapter list.
+     */
+    fun removeChaptersFromQueue(chapters: List<Chapter>) {
+        removeFromDownloadQueue(chapters)
+    }
+
+    /**
      * Deletes the directories of a list of downloaded chapters.
      *
      * @param chapters the list of chapters to delete.
@@ -435,7 +443,10 @@ class DownloadManager(
             .map { it.id }
             .ifEmpty { listOf(0) }
         val filteredCategoryManga = if (categoriesForManga.intersect(categoriesToExclude).isNotEmpty()) {
-            chapters.filterNot { it.read }
+            // Chapters of manga in excluded categories should not be deleted at
+            // all; the previous read-only filter still let unread downloaded
+            // chapters through and behaved inconsistently per category.
+            emptyList()
         } else {
             chapters
         }

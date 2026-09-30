@@ -64,7 +64,6 @@ import eu.kanade.tachiyomi.data.notification.Notifications
 import eu.kanade.tachiyomi.databinding.ReaderActivityBinding
 import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.ui.base.activity.BaseActivity
-import eu.kanade.tachiyomi.ui.main.MainActivity
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel.SetAsCoverResult.AddToLibraryFirst
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel.SetAsCoverResult.Error
 import eu.kanade.tachiyomi.ui.reader.ReaderViewModel.SetAsCoverResult.Success
@@ -101,7 +100,6 @@ import kotlinx.coroutines.launch
 import logcat.LogPriority
 import mihon.app.di.AppGraph
 import mihon.core.metro.metroGraph
-import tachiyomi.core.common.Constants
 import tachiyomi.core.common.i18n.stringResource
 import tachiyomi.core.common.util.lang.launchIO
 import tachiyomi.core.common.util.lang.launchNonCancellable
@@ -647,15 +645,10 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun openMangaScreen() {
-        viewModel.manga?.id?.let { id ->
-            startActivity(
-                Intent(this, MainActivity::class.java).apply {
-                    action = Constants.SHORTCUT_MANGA
-                    putExtra(Constants.MANGA_EXTRA, id)
-                    addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                },
-            )
-        }
+        // Mirror the back button: the manga page is already below the reader in
+        // the stack, so finishing returns to it with the previous navigation
+        // context intact instead of resetting to the library tab.
+        finish()
     }
 
     private fun openChapterInWebView() {

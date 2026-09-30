@@ -496,20 +496,33 @@ data class TrackDateSelectorScreen(
     @Transient
     private val selectableDates = object : SelectableDates {
         override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-            val targetDate = Instant.fromEpochMilliseconds(utcTimeMillis).toLocalDateTime(TimeZone.UTC)
+            val targetDate = Instant.fromEpochMilliseconds(utcTimeMillis)
+                .toLocalDateTime(TimeZone.UTC)
+                .date
 
             // Disallow future dates
-            if (targetDate > Clock.System.now().toLocalDateTime(TimeZone.UTC)) return false
+            if (targetDate > Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date) {
+                return false
+            }
 
+            // Stored dates are local-midnight instants, so they must be read
+            // back in the system timezone to get the calendar day the user
+            // actually picked; comparing them as UTC shifts positive-offset
+            // timezones back by a day.
+            val localTimeZone = TimeZone.currentSystemDefault()
             return when {
                 // Disallow setting start date after finish date
                 start && track.finishDate > 0 -> {
-                    val finishDate = Instant.fromEpochMilliseconds(track.finishDate).toLocalDateTime(TimeZone.UTC)
+                    val finishDate = Instant.fromEpochMilliseconds(track.finishDate)
+                        .toLocalDateTime(localTimeZone)
+                        .date
                     targetDate <= finishDate
                 }
                 // Disallow setting finish date before start date
                 !start && track.startDate > 0 -> {
-                    val startDate = Instant.fromEpochMilliseconds(track.startDate).toLocalDateTime(TimeZone.UTC)
+                    val startDate = Instant.fromEpochMilliseconds(track.startDate)
+                        .toLocalDateTime(localTimeZone)
+                        .date
                     startDate <= targetDate
                 }
                 else -> {
@@ -520,17 +533,22 @@ data class TrackDateSelectorScreen(
 
         override fun isSelectableYear(year: Int): Boolean {
             // Disallow future years
-            if (year > Clock.System.now().toLocalDateTime(TimeZone.UTC).year) return false
+            if (year > Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).year) return false
 
+            val localTimeZone = TimeZone.currentSystemDefault()
             return when {
                 // Disallow setting start year after finish year
                 start && track.finishDate > 0 -> {
-                    val finishDate = Instant.fromEpochMilliseconds(track.finishDate).toLocalDateTime(TimeZone.UTC)
+                    val finishDate = Instant.fromEpochMilliseconds(track.finishDate)
+                        .toLocalDateTime(localTimeZone)
+                        .date
                     year <= finishDate.year
                 }
                 // Disallow setting finish year before start year
                 !start && track.startDate > 0 -> {
-                    val startDate = Instant.fromEpochMilliseconds(track.startDate).toLocalDateTime(TimeZone.UTC)
+                    val startDate = Instant.fromEpochMilliseconds(track.startDate)
+                        .toLocalDateTime(localTimeZone)
+                        .date
                     startDate.year <= year
                 }
                 else -> {

@@ -229,6 +229,13 @@ class SyncChaptersWithSource(
         )
         updateManga.awaitUpdateFetchInterval(manga, timeZone, now, fetchWindow)
 
+        // Prune queued downloads that reference the deleted chapters
+        if (removedIds.isNotEmpty()) {
+            downloadManager.removeChaptersFromQueue(
+                removedChapters.filter { it.id in removedIds },
+            )
+        }
+
         // Set this manga as updated since chapters were changed
         // Note that last_update actually represents last time the chapter list changed at all
         updateManga.awaitUpdateLastUpdate(manga.id)
