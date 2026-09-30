@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.getSystemService
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.Insets
 import androidx.core.net.toUri
 import androidx.core.transition.doOnEnd
@@ -473,6 +474,8 @@ class ReaderActivity : BaseActivity() {
         )
         val verticalNavigatorOnLeft by readerPreferences.verticalNavigatorOnLeft.collectAsState()
         val verticalNavigatorHeight by readerPreferences.verticalNavigatorHeight.collectAsState()
+        val autoScrollSpeed by readerPreferences.autoscrollSpeed.collectAsState()
+        val autoScrollSmooth by readerPreferences.autoscrollSmoothScrolling.collectAsState()
 
         ReaderAppBars(
             visible = state.menuVisible,
@@ -535,6 +538,10 @@ class ReaderActivity : BaseActivity() {
                 menuToggleToast?.cancel()
                 menuToggleToast = toast(if (enabled) MR.strings.on else MR.strings.off)
             },
+            autoScrollSpeed = autoScrollSpeed,
+            onAutoScrollSpeedChange = readerPreferences.autoscrollSpeed::set,
+            autoScrollSmooth = autoScrollSmooth,
+            onAutoScrollSmoothChange = readerPreferences.autoscrollSmoothScrolling::set,
             onClickSettings = viewModel::openSettingsDialog,
         )
     }
@@ -550,27 +557,39 @@ class ReaderActivity : BaseActivity() {
                 combine(
                     viewModel.state.map { it.autoScroll }.distinctUntilChanged(),
                     readerPreferences.autoscrollSpeed.changes(),
-                ) { enabled, speed -> enabled to speed }
-                    .collectLatest { (enabled, speed) ->
+                    readerPreferences.autoscrollSmoothScrolling.changes(),
+                ) { enabled, speed, smooth -> Triple(enabled, speed, smooth) }
+                    .collectLatest { (enabled, speed, smooth) ->
                         while (enabled) {
                             val viewer = viewModel.state.value.viewer
+                            val pageInterval = (AUTOSCROLL_PAGE_INTERVAL_BASE - speed) * 1_000L
                             when {
                                 viewModel.state.value.menuVisible -> delay(MENU_POLL_DELAY)
                                 viewer is WebtoonViewer -> {
-                                    viewer.autoScrollStep(speed)
-                                    delay(AUTOSCROLL_FRAME_DELAY)
+                                    if (smooth) {
+                                        viewer.autoScrollStep(speed)
+                                        delay(AUTOSCROLL_FRAME_DELAY)
+                                    } else {
+                                        viewer.autoScrollPage()
+                                        delay(pageInterval)
+                                    }
                                 }
                                 viewer is WebGpuViewerContinuous -> {
-                                    viewer.autoScrollStep(speed.toFloat())
-                                    delay(AUTOSCROLL_FRAME_DELAY)
+                                    if (smooth) {
+                                        viewer.autoScrollStep(speed.toFloat())
+                                        delay(AUTOSCROLL_FRAME_DELAY)
+                                    } else {
+                                        viewer.autoScrollPage()
+                                        delay(pageInterval)
+                                    }
                                 }
                                 viewer is PagerViewer -> {
                                     viewer.moveToNext()
-                                    delay((AUTOSCROLL_PAGE_INTERVAL_BASE - speed) * 1_000L)
+                                    delay(pageInterval)
                                 }
                                 viewer is WebGpuViewer -> {
                                     viewer.moveToNext()
-                                    delay((AUTOSCROLL_PAGE_INTERVAL_BASE - speed) * 1_000L)
+                                    delay(pageInterval)
                                 }
                                 else -> delay(AUTOSCROLL_FRAME_DELAY)
                             }
@@ -918,7 +937,11 @@ class ReaderActivity : BaseActivity() {
         init {
             readerPreferences.readerTheme.changes()
                 .onEach { theme ->
-                    binding.readerContainer.setBackgroundColor(baseContext.readerBackgroundColor(theme))
+                    val backgroundColor = baseContext.readerBackgroundColor(theme)
+                    binding.readerContainer.setBackgroundColor(backgroundColor)
+                    val lightBackground = ColorUtils.calculateLuminance(backgroundColor) > 0.5
+                    windowInsetsController.isAppearanceLightStatusBars = lightBackground
+                    windowInsetsController.isAppearanceLightNavigationBars = lightBackground
                 }
                 .launchIn(lifecycleScope)
 

@@ -142,6 +142,11 @@ internal fun ColumnScope.GeneralPage(viewModel: ReaderSettingsViewModel) {
     )
 
     CheckboxItem(
+        label = stringResource(MR.strings.pref_autoscroll_smooth_scroll),
+        pref = viewModel.preferences.autoscrollSmoothScrolling,
+    )
+
+    CheckboxItem(
         label = stringResource(MR.strings.pref_flash_page),
         pref = viewModel.preferences.flashOnPageChange,
     )

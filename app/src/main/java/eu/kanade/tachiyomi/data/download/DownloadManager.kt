@@ -321,7 +321,7 @@ class DownloadManager(
     suspend fun deletePendingChapters() {
         val pendingChapters = pendingDeleter.getPendingChapters()
         for ((manga, chapters) in pendingChapters) {
-            val source = sourceManager.get(manga.source) ?: continue
+            val source = sourceManager.getOrStub(manga.source)
             deleteChapters(chapters, manga, source)
         }
     }

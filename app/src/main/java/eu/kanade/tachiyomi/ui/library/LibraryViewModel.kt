@@ -24,7 +24,6 @@ import eu.kanade.tachiyomi.data.download.DownloadCache
 import eu.kanade.tachiyomi.data.download.DownloadManager
 import eu.kanade.tachiyomi.data.track.TrackerManager
 import eu.kanade.tachiyomi.source.model.SManga
-import eu.kanade.tachiyomi.source.online.HttpSource
 import eu.kanade.tachiyomi.util.chapter.getNextUnread
 import eu.kanade.tachiyomi.util.removeCovers
 import kotlinx.coroutines.Dispatchers
@@ -565,10 +564,8 @@ class LibraryViewModel(
 
             if (deleteChapters) {
                 mangas.forEach { manga ->
-                    val source = sourceManager.get(manga.source) as? HttpSource
-                    if (source != null) {
-                        downloadManager.deleteManga(manga, source)
-                    }
+                    val source = sourceManager.getOrStub(manga.source)
+                    downloadManager.deleteManga(manga, source)
                 }
             }
         }
