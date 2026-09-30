@@ -148,6 +148,10 @@ object SettingsAppearanceScreen : SearchableSettings {
                     preference = uiPreferences.imagesInDescription,
                     title = stringResource(MR.strings.pref_display_images_description),
                 ),
+                Preference.PreferenceItem.SwitchPreference(
+                    preference = uiPreferences.openKeyboardOnSearch,
+                    title = stringResource(MR.strings.pref_open_keyboard_on_search),
+                ),
             ),
         )
     }

@@ -86,11 +86,14 @@ class ImageSaver(
             imageLocation,
         ).joinToString(File.separator)
 
+        val now = Clock.System.now()
         val contentValues = contentValuesOf(
             MediaStore.MediaColumns.RELATIVE_PATH to relativePath,
             MediaStore.MediaColumns.DISPLAY_NAME to if (isMimeTypeSupported) image.name else filename,
             MediaStore.MediaColumns.MIME_TYPE to type.mime,
-            MediaStore.MediaColumns.DATE_MODIFIED to Clock.System.now().epochSeconds,
+            MediaStore.MediaColumns.DATE_ADDED to now.epochSeconds,
+            MediaStore.MediaColumns.DATE_MODIFIED to now.epochSeconds,
+            MediaStore.Images.ImageColumns.DATE_TAKEN to now.toEpochMilliseconds(),
         )
 
         val picture = findUriOrDefault(relativePath, filename) {

@@ -285,6 +285,16 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
     }
 
     /**
+     * Scrolls down by [pixels], called continuously while autoscroll is enabled. Does nothing
+     * while the user is actively dragging or flinging the recycler.
+     */
+    fun autoScrollStep(pixels: Int) {
+        if (recycler.scrollState == RecyclerView.SCROLL_STATE_IDLE) {
+            recycler.scrollBy(0, pixels)
+        }
+    }
+
+    /**
      * Scrolls down by [scrollDistance].
      */
     private fun scrollDown() {

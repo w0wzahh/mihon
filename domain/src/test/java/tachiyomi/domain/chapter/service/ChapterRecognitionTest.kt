@@ -247,6 +247,16 @@ class ChapterRecognitionTest {
     }
 
     @Test
+    fun `Chapters with negative numbers`() {
+        val mangaTitle = "random"
+
+        assertChapter(mangaTitle, "#-1", -1.0)
+        assertChapter(mangaTitle, "Ch.-4", -4.0)
+        assertChapter(mangaTitle, "Chapter -1.5", -1.5)
+        assertChapter(mangaTitle, "Vol.1 Ch.-2", -2.0)
+    }
+
+    @Test
     fun `Chapters containing season`() {
         assertChapter("D.I.C.E", "D.I.C.E[Season 001] Ep. 007", 7.0)
     }

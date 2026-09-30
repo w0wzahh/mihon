@@ -24,6 +24,7 @@ import cafe.adriel.voyager.navigator.currentOrThrow
 import eu.kanade.domain.ui.UiPreferences
 import eu.kanade.presentation.components.AppBar
 import eu.kanade.presentation.more.LogoHeader
+import eu.kanade.presentation.more.settings.widget.SwitchPreferenceWidget
 import eu.kanade.presentation.more.settings.widget.TextPreferenceWidget
 import eu.kanade.presentation.util.LocalBackPress
 import eu.kanade.presentation.util.Screen
@@ -59,6 +60,7 @@ import tachiyomi.presentation.core.components.LinkIcon
 import tachiyomi.presentation.core.components.ScrollbarLazyColumn
 import tachiyomi.presentation.core.components.material.Scaffold
 import tachiyomi.presentation.core.i18n.stringResource
+import tachiyomi.presentation.core.util.collectAsState
 import uy.kohesive.injekt.Injekt
 import uy.kohesive.injekt.api.get
 import kotlin.time.Instant
@@ -105,6 +107,18 @@ object AboutScreen : Screen() {
                 }
 
                 if (updaterEnabled) {
+                    item {
+                        val autoCheckUpdates by remember {
+                            context.appGraph.basePreferences.checkForAppUpdates
+                        }.collectAsState()
+                        SwitchPreferenceWidget(
+                            title = stringResource(MR.strings.pref_check_for_updates_auto),
+                            checked = autoCheckUpdates,
+                            onCheckedChanged = {
+                                context.appGraph.basePreferences.checkForAppUpdates.set(it)
+                            },
+                        )
+                    }
                     item {
                         TextPreferenceWidget(
                             title = stringResource(MR.strings.check_for_updates),

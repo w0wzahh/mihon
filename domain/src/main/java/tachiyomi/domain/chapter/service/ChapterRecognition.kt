@@ -5,7 +5,13 @@ package tachiyomi.domain.chapter.service
  */
 object ChapterRecognition {
 
-    private const val NUMBER_PATTERN = """([0-9]+)(\.[0-9]+)?(\.?[a-z]+)?"""
+    /**
+     * Placeholder for a hyphen used as a minus sign so it isn't treated as a
+     * separator (e.g. "#-1" vs. "191-200").
+     */
+    private const val MINUS_PLACEHOLDER = '\u0000'
+
+    private const val NUMBER_PATTERN = """($MINUS_PLACEHOLDER?[0-9]+)(\.[0-9]+)?(\.?[a-z]+)?"""
 
     /**
      * All cases with Ch.xx
@@ -17,6 +23,12 @@ object ChapterRecognition {
      * Example: Bleach 567: Down With Snowwhite -R> 567
      */
     private val number = Regex(NUMBER_PATTERN)
+
+    /**
+     * A hyphen followed by a digit marks a negative chapter number when it isn't
+     * embedded inside a number (e.g. "#-1", "Ch.-4", "-1").
+     */
+    private val leadingMinus = Regex("""(?<=^|#|\s|\.)-(?=[0-9])""")
 
     /**
      * Regex used to remove unwanted tags
@@ -46,6 +58,7 @@ object ChapterRecognition {
             .replace(mangaTitle.lowercase(), "").trim()
             // Remove comma's or hyphens.
             .replace(',', '.')
+            .replace(leadingMinus, MINUS_PLACEHOLDER.toString())
             .replace('-', '.')
             // Remove unwanted white spaces.
             .replace(unwantedWhiteSpace, "")
@@ -79,11 +92,11 @@ object ChapterRecognition {
      */
     private fun getChapterNumberFromMatch(match: MatchResult): Double {
         return match.let {
-            val initial = it.groups[1]?.value?.toDouble()!!
+            val initial = it.groups[1]?.value?.replace(MINUS_PLACEHOLDER, '-')?.toDouble()!!
             val subChapterDecimal = it.groups[2]?.value
             val subChapterAlpha = it.groups[3]?.value
             val addition = checkForDecimal(subChapterDecimal, subChapterAlpha)
-            initial.plus(addition)
+            initial.plus(if (initial < 0) -addition else addition)
         }
     }
 

@@ -45,4 +45,6 @@ class BasePreferences(
         Preference.appStateKey("donation_campaign_shown"),
         false,
     )
+
+    val checkForAppUpdates: Preference<Boolean> = preferenceStore.getBoolean("pref_check_for_app_updates", true)
 }

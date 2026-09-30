@@ -84,6 +84,17 @@ class WebGpuViewerContinuous(activity: ReaderActivity, val useGap: Boolean = fal
         state.animateScroll(direction * state.height / 2f)
     }
 
+    /**
+     * Scrolls down by [pixels], called continuously while autoscroll is enabled. Does nothing
+     * while the user is actively panning or a fling is settling.
+     */
+    fun autoScrollStep(pixels: Float) {
+        if (!state.isPanning && !state.isFlinging) {
+            state.scrollBy(pixels)
+            state.invalidate()
+        }
+    }
+
     override fun moveRight() = scrollByHalfPage(1)
 
     override fun moveLeft() = scrollByHalfPage(-1)
