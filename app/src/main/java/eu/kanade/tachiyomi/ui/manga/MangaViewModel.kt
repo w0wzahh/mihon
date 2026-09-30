@@ -1137,7 +1137,9 @@ class MangaViewModel(
             }
 
             val chapterListItems by lazy {
-                if (hideMissingChapters) {
+                // Filtered-out chapters are not missing chapters; showing gap
+                // indicators while filters are active is misleading.
+                if (hideMissingChapters || filterActive) {
                     return@lazy processedChapters
                 }
 

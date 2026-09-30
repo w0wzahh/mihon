@@ -348,6 +348,10 @@ class WebtoonViewer(val activity: ReaderActivity, val isContinuous: Boolean = tr
             KeyEvent.KEYCODE_DPAD_DOWN,
             KeyEvent.KEYCODE_PAGE_DOWN,
             -> if (isUp) scrollDown()
+
+            KeyEvent.KEYCODE_SPACE -> if (isUp) {
+                if (event.isShiftPressed) scrollUp() else scrollDown()
+            }
             else -> return false
         }
         return true

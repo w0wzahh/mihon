@@ -61,6 +61,7 @@ import tachiyomi.domain.source.service.SourceManager
 import tachiyomi.domain.track.interactor.GetTracks
 import tachiyomi.i18n.MR
 import java.io.File
+import java.io.IOException
 import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
@@ -339,7 +340,8 @@ class Downloader(
             download.chapter.scanlator,
             download.chapter.url,
         )
-        val tmpDir = mangaDir.createDirectory(chapterDirname + TMP_DIR_SUFFIX)!!
+        val tmpDir = provider.getOrCreateDirectory(mangaDir, chapterDirname + TMP_DIR_SUFFIX)
+            ?: throw IOException(context.stringResource(MR.strings.storage_failed_to_create_directory, chapterDirname))
 
         try {
             // If the page list already exists, start from the file

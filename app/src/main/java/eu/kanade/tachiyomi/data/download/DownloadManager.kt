@@ -402,7 +402,15 @@ class DownloadManager(
         // Assume there's only 1 version of the chapter name formats present
         val oldDownload = oldNames.asSequence()
             .mapNotNull { mangaDir.findFile(it) }
-            .firstOrNull() ?: return
+            .firstOrNull()
+            ?: mangaDir.listFiles()?.firstOrNull {
+                // Fall back to the URL hash suffix in case the stored name no
+                // longer matches any of the generated name variants.
+                val hashSuffix = provider.getChapterUrlHashSuffix(oldChapter.url)
+                val name = it.name.orEmpty()
+                name.endsWith(hashSuffix) || name.endsWith("$hashSuffix.cbz")
+            }
+            ?: return
 
         var newName = provider.getChapterDirName(newChapter.name, newChapter.scanlator, newChapter.url)
         if (oldDownload.isFile && oldDownload.extension == "cbz") {

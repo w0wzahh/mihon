@@ -1997,6 +1997,9 @@ open class WebGpuViewer(
             KeyEvent.KEYCODE_DPAD_UP -> if (isUp) moveUp()
             KeyEvent.KEYCODE_PAGE_DOWN -> if (isUp) moveDown()
             KeyEvent.KEYCODE_PAGE_UP -> if (isUp) moveUp()
+            KeyEvent.KEYCODE_SPACE -> if (isUp) {
+                if (event.isShiftPressed) moveUp() else moveDown()
+            }
             KeyEvent.KEYCODE_MENU -> if (isUp) activity.toggleMenu()
             else -> return false
         }

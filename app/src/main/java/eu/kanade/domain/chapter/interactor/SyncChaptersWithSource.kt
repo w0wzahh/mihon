@@ -142,6 +142,21 @@ class SyncChaptersWithSource(
 
         val removedChapters = dbChapters.filterNot { it.url in sourceUrls }
 
+        // Keep chapters that still have downloads on disk. Deleting them would
+        // orphan the downloaded files and remove access to content the user
+        // already has locally when a source drops the chapter from its index.
+        val removedIds = removedChapters
+            .filterNot {
+                downloadManager.isChapterDownloaded(
+                    it.name,
+                    it.scanlator,
+                    it.url,
+                    manga.title,
+                    manga.source,
+                )
+            }
+            .map { it.id }
+
         // Return if there's nothing to add, delete, or update to avoid unnecessary db transactions.
         if (newChapters.isEmpty() && removedChapters.isEmpty() && updatedChapters.isEmpty()) {
             if (manualFetch || manga.fetchInterval == 0 || manga.nextUpdate < fetchWindow.first) {
@@ -208,7 +223,7 @@ class SyncChaptersWithSource(
         }
 
         val added = chapterRepository.updateFromRemote(
-            removedIds = removedChapters.map { it.id },
+            removedIds = removedIds,
             added = toAdd,
             updated = updatedChapters,
         )

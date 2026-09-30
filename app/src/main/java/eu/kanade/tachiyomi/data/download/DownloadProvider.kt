@@ -52,7 +52,7 @@ class DownloadProvider(
         }
 
         val sourceDirName = getSourceDirName(source)
-        val sourceDir = downloadsDir.createDirectory(sourceDirName)
+        val sourceDir = getOrCreateDirectory(downloadsDir, sourceDirName)
         if (sourceDir == null) {
             val displayablePath = downloadsDir.displayablePath + "/$sourceDirName"
             logcat(LogPriority.ERROR) { "Failed to create source download directory: $displayablePath" }
@@ -62,7 +62,7 @@ class DownloadProvider(
         }
 
         val mangaDirName = getMangaDirName(mangaTitle)
-        val mangaDir = sourceDir.createDirectory(mangaDirName)
+        val mangaDir = getOrCreateDirectory(sourceDir, mangaDirName)
         if (mangaDir == null) {
             val displayablePath = sourceDir.displayablePath + "/$mangaDirName"
             logcat(LogPriority.ERROR) { "Failed to create manga download directory: $displayablePath" }
@@ -72,6 +72,39 @@ class DownloadProvider(
         }
 
         return Result.success(mangaDir)
+    }
+
+    /**
+     * Returns an existing child directory named [name] or creates it.
+     *
+     * Some storage backends (SAF providers in particular) may fail to find an
+     * existing directory and instead create a "name (1)" duplicate, or fail to
+     * create anything at all near the filename length limit. To stay robust we
+     * verify the returned directory's name and fall back to a fresh listing.
+     */
+    internal fun getOrCreateDirectory(parent: UniFile, name: String): UniFile? {
+        val existing = findChildDirectory(parent, name)
+        if (existing != null) {
+            return existing
+        }
+
+        val created = parent.createDirectory(name)
+        return when {
+            created == null -> findChildDirectory(parent, name)
+            created.name != name -> {
+                // The provider appended a " (N)" suffix because the real directory
+                // already exists but wasn't visible in its earlier listing. Reuse
+                // the real directory and drop the stray duplicate.
+                findChildDirectory(parent, name)
+                    ?.also { created.delete() }
+                    ?: created
+            }
+            else -> created
+        }
+    }
+
+    private fun findChildDirectory(dir: UniFile, name: String): UniFile? {
+        return dir.listFiles()?.firstOrNull { it.isDirectory && it.name == name }
     }
 
     /**
@@ -109,10 +142,30 @@ class DownloadProvider(
         mangaTitle: String,
         source: Source,
     ): UniFile? {
-        val mangaDir = findMangaDir(mangaTitle, source)
+        val mangaDir = findMangaDir(mangaTitle, source) ?: return null
         return getValidChapterDirNames(chapterName, chapterScanlator, chapterUrl).asSequence()
-            .mapNotNull { mangaDir?.findFile(it) }
+            .mapNotNull { mangaDir.findFile(it) }
             .firstOrNull()
+            ?: findChapterDirByUrlHash(mangaDir, chapterUrl)
+    }
+
+    /**
+     * Finds a chapter directory or archive by the URL hash suffix that every
+     * generated chapter directory name ends with. This keeps chapters
+     * detectable when their name or scanlator changed on the source after the
+     * chapter was downloaded.
+     */
+    private fun findChapterDirByUrlHash(mangaDir: UniFile, chapterUrl: String): UniFile? {
+        val hashSuffix = getChapterUrlHashSuffix(chapterUrl)
+        return mangaDir.listFiles()
+            ?.firstOrNull {
+                val name = it.name.orEmpty()
+                name.endsWith(hashSuffix) || name.endsWith("$hashSuffix.cbz")
+            }
+    }
+
+    fun getChapterUrlHashSuffix(chapterUrl: String): String {
+        return "_" + md5(chapterUrl).take(6)
     }
 
     /**
@@ -128,6 +181,7 @@ class DownloadProvider(
             getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url).asSequence()
                 .mapNotNull { mangaDir.findFile(it) }
                 .firstOrNull()
+                ?: findChapterDirByUrlHash(mangaDir, chapter.url)
         }
     }
 

@@ -146,11 +146,22 @@ class DownloadCache(
         if (sourceDir != null) {
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(mangaTitle)]
             if (mangaDir != null) {
-                return provider.getValidChapterDirNames(
-                    chapterName,
-                    chapterScanlator,
-                    chapterUrl,
-                ).any { it in mangaDir.chapterDirs }
+                if (provider.getValidChapterDirNames(
+                        chapterName,
+                        chapterScanlator,
+                        chapterUrl,
+                    ).any { it in mangaDir.chapterDirs }
+                ) {
+                    return true
+                }
+
+                // Fall back to the URL hash suffix every generated chapter directory
+                // name ends with, so chapters remain detectable when their name or
+                // scanlator changed on the source after downloading.
+                val hashSuffix = provider.getChapterUrlHashSuffix(chapterUrl)
+                return mangaDir.chapterDirs.any {
+                    it.endsWith(hashSuffix) || it.endsWith("$hashSuffix.cbz")
+                }
             }
         }
         return false
@@ -230,11 +241,12 @@ class DownloadCache(
         rootDownloadsDirMutex.withLock {
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)] ?: return
-            provider.getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url).forEach {
-                if (it in mangaDir.chapterDirs) {
+            val hashSuffix = provider.getChapterUrlHashSuffix(chapter.url)
+            provider.getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url)
+                .forEach {
                     mangaDir.chapterDirs -= it
                 }
-            }
+            mangaDir.chapterDirs.removeAll { it.endsWith(hashSuffix) || it.endsWith("$hashSuffix.cbz") }
         }
 
         notifyChanges()
@@ -251,11 +263,12 @@ class DownloadCache(
             val sourceDir = rootDownloadsDir.sourceDirs[manga.source] ?: return
             val mangaDir = sourceDir.mangaDirs[provider.getMangaDirName(manga.title)] ?: return
             chapters.forEach { chapter ->
-                provider.getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url).forEach {
-                    if (it in mangaDir.chapterDirs) {
+                val hashSuffix = provider.getChapterUrlHashSuffix(chapter.url)
+                provider.getValidChapterDirNames(chapter.name, chapter.scanlator, chapter.url)
+                    .forEach {
                         mangaDir.chapterDirs -= it
                     }
-                }
+                mangaDir.chapterDirs.removeAll { it.endsWith(hashSuffix) || it.endsWith("$hashSuffix.cbz") }
             }
         }
 
