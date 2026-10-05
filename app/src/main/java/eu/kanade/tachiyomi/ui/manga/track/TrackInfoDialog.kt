@@ -505,10 +505,6 @@ data class TrackDateSelectorScreen(
                 return false
             }
 
-            // Stored dates are local-midnight instants, so they must be read
-            // back in the system timezone to get the calendar day the user
-            // actually picked; comparing them as UTC shifts positive-offset
-            // timezones back by a day.
             val localTimeZone = TimeZone.currentSystemDefault()
             return when {
                 // Disallow setting start date after finish date

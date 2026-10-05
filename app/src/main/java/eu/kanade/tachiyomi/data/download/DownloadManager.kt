@@ -237,10 +237,6 @@ class DownloadManager(
         removeFromDownloadQueue(downloads.map { it.chapter })
     }
 
-    /**
-     * Removes queued downloads for chapters that were deleted, e.g. when a
-     * source sync pruned them from the chapter list.
-     */
     fun removeChaptersFromQueue(chapters: List<Chapter>) {
         removeFromDownloadQueue(chapters)
     }
@@ -412,8 +408,6 @@ class DownloadManager(
             .mapNotNull { mangaDir.findFile(it) }
             .firstOrNull()
             ?: mangaDir.listFiles()?.firstOrNull {
-                // Fall back to the URL hash suffix in case the stored name no
-                // longer matches any of the generated name variants.
                 val hashSuffix = provider.getChapterUrlHashSuffix(oldChapter.url)
                 val name = it.name.orEmpty()
                 name.endsWith(hashSuffix) || name.endsWith("$hashSuffix.cbz")
@@ -443,9 +437,6 @@ class DownloadManager(
             .map { it.id }
             .ifEmpty { listOf(0) }
         val filteredCategoryManga = if (categoriesForManga.intersect(categoriesToExclude).isNotEmpty()) {
-            // Chapters of manga in excluded categories should not be deleted at
-            // all; the previous read-only filter still let unread downloaded
-            // chapters through and behaved inconsistently per category.
             emptyList()
         } else {
             chapters

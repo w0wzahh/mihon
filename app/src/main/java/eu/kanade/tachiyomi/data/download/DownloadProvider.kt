@@ -74,14 +74,6 @@ class DownloadProvider(
         return Result.success(mangaDir)
     }
 
-    /**
-     * Returns an existing child directory named [name] or creates it.
-     *
-     * Some storage backends (SAF providers in particular) may fail to find an
-     * existing directory and instead create a "name (1)" duplicate, or fail to
-     * create anything at all near the filename length limit. To stay robust we
-     * verify the returned directory's name and fall back to a fresh listing.
-     */
     internal fun getOrCreateDirectory(parent: UniFile, name: String): UniFile? {
         val existing = findChildDirectory(parent, name)
         if (existing != null) {
@@ -92,9 +84,6 @@ class DownloadProvider(
         return when {
             created == null -> findChildDirectory(parent, name)
             created.name != name -> {
-                // The provider appended a " (N)" suffix because the real directory
-                // already exists but wasn't visible in its earlier listing. Reuse
-                // the real directory and drop the stray duplicate.
                 findChildDirectory(parent, name)
                     ?.also { created.delete() }
                     ?: created
@@ -149,12 +138,6 @@ class DownloadProvider(
             ?: findChapterDirByUrlHash(mangaDir, chapterUrl)
     }
 
-    /**
-     * Finds a chapter directory or archive by the URL hash suffix that every
-     * generated chapter directory name ends with. This keeps chapters
-     * detectable when their name or scanlator changed on the source after the
-     * chapter was downloaded.
-     */
     private fun findChapterDirByUrlHash(mangaDir: UniFile, chapterUrl: String): UniFile? {
         val hashSuffix = getChapterUrlHashSuffix(chapterUrl)
         return mangaDir.listFiles()

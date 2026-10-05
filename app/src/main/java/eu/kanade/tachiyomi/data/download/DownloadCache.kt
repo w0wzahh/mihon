@@ -155,9 +155,6 @@ class DownloadCache(
                     return true
                 }
 
-                // Fall back to the URL hash suffix every generated chapter directory
-                // name ends with, so chapters remain detectable when their name or
-                // scanlator changed on the source after downloading.
                 val hashSuffix = provider.getChapterUrlHashSuffix(chapterUrl)
                 return mangaDir.chapterDirs.any {
                     it.endsWith(hashSuffix) || it.endsWith("$hashSuffix.cbz")

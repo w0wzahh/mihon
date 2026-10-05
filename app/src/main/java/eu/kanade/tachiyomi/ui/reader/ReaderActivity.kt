@@ -544,11 +544,6 @@ class ReaderActivity : BaseActivity() {
         )
     }
 
-    /**
-     * Drives the reader autoscroll: while enabled, continuous viewers scroll [speed] pixels per
-     * frame tick and paged viewers turn a page every (11 - speed) seconds. Scrolling pauses
-     * while the reader menu is open and while the user is interacting with the viewer.
-     */
     private fun enableAutoScroll() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -645,9 +640,6 @@ class ReaderActivity : BaseActivity() {
     }
 
     private fun openMangaScreen() {
-        // Mirror the back button: the manga page is already below the reader in
-        // the stack, so finishing returns to it with the previous navigation
-        // context intact instead of resetting to the library tab.
         finish()
     }
 

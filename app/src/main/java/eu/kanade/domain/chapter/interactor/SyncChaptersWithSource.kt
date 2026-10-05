@@ -142,9 +142,6 @@ class SyncChaptersWithSource(
 
         val removedChapters = dbChapters.filterNot { it.url in sourceUrls }
 
-        // Keep chapters that still have downloads on disk. Deleting them would
-        // orphan the downloaded files and remove access to content the user
-        // already has locally when a source drops the chapter from its index.
         val removedIds = removedChapters
             .filterNot {
                 downloadManager.isChapterDownloaded(
@@ -229,7 +226,6 @@ class SyncChaptersWithSource(
         )
         updateManga.awaitUpdateFetchInterval(manga, timeZone, now, fetchWindow)
 
-        // Prune queued downloads that reference the deleted chapters
         if (removedIds.isNotEmpty()) {
             downloadManager.removeChaptersFromQueue(
                 removedChapters.filter { it.id in removedIds },

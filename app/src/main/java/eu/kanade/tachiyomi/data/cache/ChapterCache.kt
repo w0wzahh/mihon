@@ -212,8 +212,6 @@ class ChapterCache(
         // Remove the extension from the file to get the key of the cache
         val key = file.substringBeforeLast(".")
         return try {
-            // Remove file from cache, falling back to a raw delete for orphaned
-            // files that are no longer tracked by the journal
             diskCache.remove(key) || File(cacheDir, file).delete()
         } catch (e: Exception) {
             logcat(LogPriority.WARN, e) { "Failed to remove file from cache" }
